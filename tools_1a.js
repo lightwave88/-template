@@ -1,6 +1,6 @@
 
 
-class Tools {
+class TagTools {
 
     static findScript(content) {
         let nodeList = [];
@@ -8,19 +8,20 @@ class Tools {
         while (content) {
             debugger;
             let res = Tools.$findScript(null, content);
+            
             debugger;
 
             let node;
 
-            if (res['find']) {
+            if (res['hasChecked'] != null) {
 
-                if (res['hasChecked'] != null) {
-
-                    node = {};
-                    node['name'] = 'text';
-                    node['content'] = res['hasChecked'];
-                    nodeList.push(node);
-                }
+                node = {};
+                node['name'] = 'text';
+                node['content'] = res['hasChecked'];
+                nodeList.push(node);
+            }
+            //-----------------------
+            if (res['find']) {                
                 node = {};
                 node['name'] = 'script';
                 node['content'] = res['tagContent']
@@ -28,26 +29,18 @@ class Tools {
 
                 content = res['remain'];
             } else {
-                node = {};
-                node['name'] = 'text';
-                node['content'] = res['hasChecked'];
-
-                nodeList.push(node);
-
-                content = null;
+                break;
             }
         }
-        debugger;
 
-        console.dir(nodeList);
+        return nodeList;
     }
-
 
     // 是否要從文本的某處開始(可以不指定)
     // content: 文本
     // headTag:
     // footTag:
-    static $findScript(index, content, headTag, footTag) {
+    static $findScript(content, headTag, footTag) {
 
         const rValue = {
             hasChecked: undefined,
@@ -57,11 +50,6 @@ class Tools {
             tagFoot: undefined,
             tagContent: undefined
         };
-
-        if (index != null) {
-            rValue['hasChecked'] = content.substring(0, index);
-            content = content.substring(index);
-        }
 
         if (headTag == null) {
             return Tools._findScript(rValue, content);
@@ -172,7 +160,6 @@ class Tools {
         rValue['hasChecked'] = content;
         return rValue;
     }
-
 
     // 用比較快的方式
     // 不用再去考慮 attr
@@ -296,4 +283,4 @@ class Tools {
     }
 }
 
-export { Tools };
+export { TagTools };

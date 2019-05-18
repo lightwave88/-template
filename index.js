@@ -1,3 +1,3 @@
-import { Tools } from './tools_1a.js';
+import { TagTools } from './tools_1b.js';
 
-export default Tools.findScript;
+export default TagTools.findScript;
