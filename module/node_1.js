@@ -1,7 +1,117 @@
-class Node {
+////////////////////////////////////////////////////////////////////////////////
+//
+// 節點
+//
+////////////////////////////////////////////////////////////////////////////////
+const NodeClass = {};
 
+export { NodeClass };
+
+
+// 除了 (command 標籤) (script 標籤)外都是
+class Node {
+    printCommand() {
+        throw new Error('need override printCommand');
+    }
+}
+//==============================================================================
+class NormalNode extends Node {
+    constructor(content) {
+        super();
+
+        this.html = content;
+    }
+    //----------------------------
+    printCommand() {
+        this.html = this._checkHtml(this.html)
+        let content = 'print(`' + this.html + '`);\n';
+        return content;
+    }
+
+    _checkHtml(content){
+        // 過濾 `
+        // 脫逸 `
+        let reg = /([^\\])`/g;
+        content = content.replace(reg, function(m, g1){
+            return (g1 + '\\`');
+        });
+        return content;
+    }
 }
 
+NodeClass['NormalNode'] = NormalNode;
+//==============================================================================
+// 一般 (script 標籤)
+class ScriptNode extends Node {
+
+    constructor(head, textContent, foot) {
+        super();
+
+        if (this._isCommand(head)) {
+            let html = head + textContent + foot;
+        } else {
+            let node = new CommandNode(head, textContent, foot);
+            node.setCommandTag('script');
+            return node;
+        }
+    }
+    //----------------------------
+    // 確定是 command 標籤
+    // 還是標準 <script> 標籤
+    _isCommand(content) {
+        let reg = /\stype=(["'])text\/(?:javascript|_)\1/;
+        return reg.test(content);
+    }
+}
+
+NodeClass['ScriptNode'] = ScriptNode;
+//==============================================================================
+// 命令標籤
 class CommandNode extends Node {
 
+    constructor(head, textContent, foot) {
+        super();
+
+        this.head = head.trim();
+
+        this.textContent = textContent;
+
+        this.foot = foot.trim();
+
+        this.commandTag = this.head;
+    }
+    //----------------------------
+    setCommandTag(tagName) {
+        this.commandTag = tagName;
+    }
+    //----------------------------
+    printCommand() {
+        let fnCommand = '';
+
+        switch (this.commandTag) {
+            case 'script':
+            case '<%':
+            case '(%':
+                fnCommand += this.textContent;
+                break;
+            case '<%=':
+            case '(%=':
+                fnCommand += 'print(`' + this.textContent + '`);\n';
+                break;
+            case '<%-':
+            case '(%-':
+                fnCommand += 'escape(`' + this.textContent + '`);\n';
+                break;
+            default:
+                throw new Error('commandName Error(' + this.tagName + ')');
+                break;
+        }
+
+        return fnCommand;
+    }
+    //----------------------------
+    
 }
+
+NodeClass['CommandNode'] = CommandNode;
+//==============================================================================

@@ -4,6 +4,12 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+import { NodeClass } from './node_1.js';
+const NormalNode = NodeClass['NormalNode'];
+const ScriptNode = NodeClass['ScriptNode'];
+const CommandNode = NodeClass['CommandNode'];
+//------------------------------------------------
+
 const TagTools = class {
 };
 
@@ -16,10 +22,10 @@ export { TagTools };
 
 })();
 
-
+//---------------------------------
 (function () {
 
-    TagTools.findScript = function (content) {
+    TagTools.findCommandTag = function (content) {
         debugger;
 
         let nodeList = [];
@@ -49,9 +55,7 @@ export { TagTools };
             let node;
 
             if (res['hasChecked'] != null) {
-                node = {};
-                node['name'] = 'text';
-                node['content'] = res['hasChecked'];
+                node = new NormalNode(res['hasChecked']);
                 nodeList.push(node);
             }
             //-----------------------
@@ -239,12 +243,13 @@ export { TagTools };
 ////////////////////////////////////////////////////////////////////////////////
 
 class IsTag {
-    constructor(content) {
-        this.source = content;
+    constructor(source) {
+        this.source = source;
 
         this.head;
-        this.content;
+        this.html;
         this.foot;
+        this.textContent;
 
         this.rValue = {
             hasChecked: undefined,
@@ -263,8 +268,8 @@ class IsScript extends IsTag {
 
     // tagHead: 指定的標籤頭
     // tagFoot: 指定的標籤尾
-    constructor(content) {
-        super(content);
+    constructor(source) {
+        super(source);
 
         this.foot = '</script>';
         this.checkReg = this._getCheckReg('</script>');
@@ -419,16 +424,14 @@ class IsScript extends IsTag {
 
         reg.test(content);
 
-        this.content = RegExp.leftContext;
+        this.textContent = RegExp.leftContext;
     }
     //--------------------------------------
     _getNode() {
 
-        let content = `${this.head}${this.content}${this.foot}`;
-        return {
-            name: 'script',
-            contnet: content
-        };
+        let node = new ScriptNode(this.head, this.textContent, this.foot);
+
+        return node;
     }
 }
 
@@ -510,8 +513,7 @@ class IsCommand_1 extends IsTag {
         let res = this._findEnd(this.source);
 
         if (res['find']) {
-            // this.content = res['content'];
-            // this.rValue['hasChecked'] = res['hasChecked'];
+
             this.rValue['remain'] = res['remain'];
             this.rValue['find'] = this._getNode();
         } else {
@@ -521,6 +523,7 @@ class IsCommand_1 extends IsTag {
 
         return this.rValue;
     }
+
     //--------------------------------------
     _findEnd(content) {
         const rValue = {
@@ -551,7 +554,8 @@ class IsCommand_1 extends IsTag {
                 if (isErrorTag) {
                     rValue['hasChecked'] = hasChecked + rgRes[2];
                 } else {
-                    this.content = RegExp.leftContext + rgRes[2];
+                    this.foot = rgRes[2];
+                    this._splitTag(RegExp.leftContext);
                 }
 
                 return rValue;
@@ -571,12 +575,20 @@ class IsCommand_1 extends IsTag {
         return rValue;
     }
     //--------------------------------------
-    _getNode() {
+    _splitTag(content) {
         debugger;
-        return {
-            name: 'script',
-            contnet: (this.content)
-        };
+        let reg = /([(<]%[-=]?)\s([\s\S]*)/;
+
+        let res = reg.exec(content);
+
+        this.head = res[1];
+        this.textContent = res[2];
+    }
+    //--------------------------------------
+    _getNode() {
+        let node = new CommandNode(this.head, this.textContent, this.foot);
+
+        return node;
     }
 }
 
@@ -596,13 +608,6 @@ class IsCommand_2 extends IsCommand_1 {
     //--------------------------------------
     check() {
         return super.check();
-    }
-    //--------------------------------------
-    _getNode() {
-        return {
-            name: 'script',
-            contnet: (this.content)
-        };
     }
 
 }
