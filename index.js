@@ -1,4 +1,4 @@
-import { TagTools } from './module/tools_1b.js';
+import { TagTools } from './module/tools_1c.js';
 
 export function findCommandTag(content) {
     let res = TagTools.findCommandTag(content);

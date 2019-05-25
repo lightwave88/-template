@@ -13,6 +13,16 @@ class Node {
     printCommand() {
         throw new Error('need override printCommand');
     }
+
+    _checkHtml(content){
+        // 過濾 `
+        // 脫逸 `
+        let reg = /`/g;
+        content = content.replace(reg, function(m){
+            return ('\\`');
+        });
+        return content;
+    }
 }
 //==============================================================================
 class NormalNode extends Node {
@@ -28,15 +38,7 @@ class NormalNode extends Node {
         return content;
     }
 
-    _checkHtml(content){
-        // 過濾 `
-        // 脫逸 `
-        let reg = /([^\\])`/g;
-        content = content.replace(reg, function(m, g1){
-            return (g1 + '\\`');
-        });
-        return content;
-    }
+    
 }
 
 NodeClass['NormalNode'] = NormalNode;
@@ -48,11 +50,11 @@ class ScriptNode extends Node {
         super();
 
         if (this._isCommand(head)) {
-            let html = head + textContent + foot;
-        } else {
             let node = new CommandNode(head, textContent, foot);
             node.setCommandTag('script');
             return node;
+        } else {            
+            this.html = head + textContent + foot;
         }
     }
     //----------------------------
@@ -61,6 +63,13 @@ class ScriptNode extends Node {
     _isCommand(content) {
         let reg = /\stype=(["'])text\/(?:javascript|_)\1/;
         return reg.test(content);
+    }
+    //----------------------------
+
+    printCommand() {  
+        let html = JSON.stringify(this.html);      
+        let content = `print(${html});\n`;
+        return content;
     }
 }
 
@@ -74,7 +83,7 @@ class CommandNode extends Node {
 
         this.head = head.trim();
 
-        this.textContent = textContent;
+        this.textContent = textContent || '';
 
         this.foot = foot.trim();
 
@@ -110,7 +119,7 @@ class CommandNode extends Node {
         return fnCommand;
     }
     //----------------------------
-    
+
 }
 
 NodeClass['CommandNode'] = CommandNode;

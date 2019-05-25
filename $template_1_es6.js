@@ -1,6 +1,6 @@
 import { TagTools } from './module/tools_1b.js'
 ////////////////////////////////////////////////////////////////////////////////
-// 
+//
 //
 //
 ////////////////////////////////////////////////////////////////////////////////
@@ -11,13 +11,15 @@ const $template = (function () {
         debugger;
 
         let m = new GetRenderFn(content, mode);
+
+        return m.fnCommand;
         // return m.getFn();
     };
     //--------------------------------------------------------------------------
     // $template 類別函式
 
     (function ($self) {
-        // for test        
+        // for test
 
         // <% %> 與 <script type="text/_"> 互換
         $self.transform = function (content, options) {
@@ -59,10 +61,8 @@ const $template = (function () {
     class GetRenderFn {
         // content: 要解析的 str
         // options: 解析的選項
-        constructor(content, mode) {
-            this.nodeList;
+        constructor(content) {
             this.fnCommand = '';
-            this.mode = (mode == null) ? 0 : (mode % 2);
 
             // 分析文本
             this.nodeList = TagTools.findCommandTag(content);
@@ -125,14 +125,13 @@ const $template = (function () {
                  */
                 //----------------------------
 
-                undefined
                 let fnContent = `
                         'use strict'
-    
+
                         const data = {};
-                        Object.assign(data, _data);                        
+                        Object.assign(data, _data);
                         const $$$m = module;
-                        
+
                         debugger;
                         //------------------
                         ${variables}
@@ -141,7 +140,7 @@ const $template = (function () {
                         module = undefined;
                         //------------------
                         ${functionStr}
-                        
+
                         return ($$$m.contentList.join(""));\n`;
                 //----------------------------
                 let fun;
@@ -266,5 +265,3 @@ const $template = (function () {
 })();
 
 export { $template };
-
-
