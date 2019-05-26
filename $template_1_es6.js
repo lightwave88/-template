@@ -1,4 +1,4 @@
-import { TagTools } from './module/tools_1b.js'
+import { TagTools } from './module/tools_1c1.js'
 ////////////////////////////////////////////////////////////////////////////////
 //
 //
@@ -25,6 +25,8 @@ const $template = (function () {
         $self.transform = function (content, options) {
 
         };
+
+        $self.TagTools = TagTools;
 
         // 模板相關設定值
         // $template.settings

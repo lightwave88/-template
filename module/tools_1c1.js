@@ -54,7 +54,7 @@ export { TagTools };
 
             let node;
 
-            if (res['hasChecked'] != null) {
+            if (res['hasChecked']) {
                 node = new NormalNode(res['hasChecked']);
                 nodeList.push(node);
             }
@@ -109,7 +109,7 @@ export { TagTools };
      }
      */
     function _findDefaultScript(content) {
-        // debugger;
+        debugger;
 
         const rValue = {
             hasChecked: undefined,
@@ -119,7 +119,7 @@ export { TagTools };
         //-----------------------
         // 先抓到標籤開頭
         // 抓到標籤名
-        let res = /<script[\s>]/.exec(content);
+        let res = /<script(?:>|\s[\s\S]*?>)/.exec(content);
 
         if (res == null) {
             // 沒找到 <script 開頭
@@ -139,7 +139,7 @@ export { TagTools };
             throw new Error(`script no support method`);
         }
 
-        let method = new methodClass(tagHead + noCheck);
+        let method = new methodClass(tagHead, noCheck);
         res = method.check();
 
         if (res['find']) {
@@ -178,12 +178,13 @@ export { TagTools };
             throw new TypeError(`error  tag(${tagName})`);
         }
         //-----------------------
-        let scriptReg = /<(script)[\s>]/;
+        let scriptReg = /(<(script)(?:>|\s[\s\S]*?>))/;
 
         let mainReg = RegExp(`${scriptReg.source}|${headTag.source}`);
 
         debugger;
-        // console.dir(mainReg);
+
+        console.dir(mainReg);
 
         let res;
         let hasChecked;
@@ -198,18 +199,19 @@ export { TagTools };
             hasChecked = (hasChecked || '');
             hasChecked += RegExp.leftContext;
 
-            let _content = RegExp.lastMatch + RegExp.rightContext;
+            let tagHead = RegExp.lastMatch;
+
             let _hasCheck = RegExp.lastMatch;
             let noChecked = RegExp.rightContext;
 
-            let tagName = res[1] || res[2] || null;
+            let tagName = res[2] || res[3] || null;
 
             let methodClass = TagTools.identifyTagMethod[tagName];
             if (methodClass == null) {
                 throw new Error(`(${tagName}) no support method`);
             }
 
-            let method = new methodClass(_content);
+            let method = new methodClass(tagHead, noChecked);
             let _res = method.check();
 
             debugger;
@@ -238,10 +240,10 @@ export { TagTools };
 ////////////////////////////////////////////////////////////////////////////////
 
 class IsTag {
-    constructor(source) {
+    constructor(head, source) {
         this.source = source;
 
-        this.head;
+        this.head = head;
         this.html;
         this.foot;
         this.textContent;
@@ -257,8 +259,8 @@ class IsScript extends IsTag {
 
     // tagHead: 指定的標籤頭
     // tagFoot: 指定的標籤尾
-    constructor(source) {
-        super(source);
+    constructor(head, source) {
+        super(head, source);
 
         this.foot = '</script>';
 
@@ -330,48 +332,16 @@ class IsScript extends IsTag {
             hasChecked: undefined
         };
 
-        let res = this._findTagEnd(this.source);
+        let res = this._findScriptEnd(this.source);
 
         if (res['find']) {
+            // 找到尾
 
-            let remain = res['remain'];
-
-            let res_1 = this._findScriptEnd(remain);
-
-            if (res_1['find']) {
-                // 找到尾
-
-                rValue['remain'] = res_1['remain'];
-                rValue['find'] = this._getNode();
-            }
-        }
-        //-----------------------
-        if (rValue['find'] == null) {
-            rValue['hasChecked'] = this.source;
-        }
-
-        return rValue;
-    }
-
-    //--------------------------------------
-    _findTagEnd(content) {
-        // debugger;
-
-        const rValue = {
-            remain: undefined,
-            find: false,
-            hasChecked: undefined
-        };
-        //-----------------------
-        let index = content.search(/>/);
-
-        if (index < 0) {
-            rValue['find'] = false;
-            rValue['hasChecked'] = content;
+            rValue['remain'] = res['remain'];
+            rValue['find'] = this._getNode();
         } else {
-            rValue['find'] = true;
-            rValue['remain'] = RegExp.rightContext;
-            this.head = RegExp.leftContext + RegExp.lastMatch;
+
+            rValue['hasChecked'] = this.source;
         }
 
         return rValue;
@@ -400,10 +370,10 @@ class IsScript extends IsTag {
             if (rgRes[1] != null) {
                 // 找到了結尾
                 rValue['remain'] = RegExp.rightContext;
-                rValue['find'] = true;
 
-                let tagContent = hasChecked + rgRes[1];
-                this._splitTag(tagContent);
+                this.textContent = hasChecked;
+                this.foot = rgRes[1];
+                rValue['find'] = true;
 
                 return rValue;
             }
@@ -440,8 +410,8 @@ TagTools.identifyTagMethod['script'] = IsScript;
 class IsCommand_1 extends IsTag {
     // <%[-=]? %>
 
-    constructor(source) {
-        super(source);
+    constructor(head, source) {
+        super(head, source);
 
         if (IsCommand_1.checkReg == null) {
             IsCommand_1.checkReg = this._getCheckReg('\\s%>');
@@ -560,7 +530,8 @@ class IsCommand_1 extends IsTag {
                 rValue['find'] = true;
 
                 this.foot = rgRes[2];
-                this._splitTag(RegExp.leftContext);
+                this.textContent = hasChecked;
+                // this._splitTag(RegExp.leftContext);
 
                 return rValue;
             } else if (rgRes[1] != null) {
@@ -607,8 +578,8 @@ TagTools.identifyTagMethod['<%='] = IsCommand_1;
 class IsCommand_2 extends IsCommand_1 {
     // (%[-=]? %)
 
-    constructor(content) {
-        super(content);
+    constructor(head, source) {
+        super(head, source);
         this.tagEnd = '%)';
 
         if (IsCommand_2.checkReg == null) {

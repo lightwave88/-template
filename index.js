@@ -1,8 +1,9 @@
-import { TagTools } from './module/tools_1c.js';
+
+import { $template } from './$template_1_es6.js';
+
+export { $template };
 
 export function findCommandTag(content) {
-    let res = TagTools.findCommandTag(content);
+    let res = $template.TagTools.findCommandTag(content);
     return res;
 };
-
-export { $template } from './$template_1_es6.js';
