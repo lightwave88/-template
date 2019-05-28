@@ -4,7 +4,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { NodeClass } from './node_1.js';
+import { NodeClass } from './node_1a.js';
 const NormalNode = NodeClass['NormalNode'];
 const ScriptNode = NodeClass['ScriptNode'];
 const CommandNode = NodeClass['CommandNode'];
@@ -31,25 +31,23 @@ export { TagTools };
         let nodeList = [];
 
         let tagName = _checkTagName(content);
-        // console.log('-------------------');
 
         while (content) {
             debugger;
-
-            // console.log(content);
 
             // 專門找 <script>
             // 正常程序是先找出 tagHead
             let res;
 
+            //-----------------------
+            // 一定要找出個目標來
+            // 若沒有就代表這 content 本沒目標
             if (tagName == null) {
                 res = _findDefaultScript(content);
             } else {
                 res = _findScriptByAssignTag(content, tagName);
             }
-
-            // console.dir(res);
-
+            //-----------------------
             debugger;
 
             let node;
@@ -67,11 +65,12 @@ export { TagTools };
                 break;
             }
         }
+        //-----------------------
 
         return nodeList;
     }
     //--------------------------------------------------------------------------
-    function _checkTagName(content) {
+    function _$checkTagName(content) {
         // debugger;
 
         let tagName;
@@ -79,7 +78,7 @@ export { TagTools };
         let methodList = [];
         methodList.push(/(<%[-=]?)(\s+[\s\S]*?\s+|\s+)%>/g);
         methodList.push(/(\(%[-=]?)(\s+[\s\S]*?\s+|\s+)%\)/g);
-
+        //-----------------------
         methodList.some(function (reg) {
             // debugger;
 
@@ -95,8 +94,49 @@ export { TagTools };
                 return true;
             }
         });
-
+        //-----------------------
         methodList = undefined;
+
+        return tagName;
+    }
+
+    //--------------------------------------------------------------------------
+    function _checkTagName(content) {
+        // debugger;
+
+        let tagName;
+
+        let methodList = [];
+        methodList.push(/(<%[-=]?)(\s+[\s\S]*?\s+|\s+)%>/g);
+        methodList.push(/(\(%[-=]?)(\s+[\s\S]*?\s+|\s+)%\)/g);
+        //-----------------------
+        let i = 0;
+        let judgeList = [];
+
+        while (true) {
+            debugger;
+
+            i = i % (methodList.length);
+            let reg = methodList[i];
+
+            let res = reg.exec(content);
+            if (res != null) {
+                let commandContent = res[2] || '';
+
+                if (!/<[/]?(?:[a-z][^\s>/]{0,})(?:>|\s[\s\S]*?>)/.test(commandContent)) {
+                    tagName = res[1];
+                    break;
+                }
+            } else {
+                judgeList[i] = false;
+            }
+            //-----------------------
+            if (judgeList[0] == false && judgeList[1] == false) {
+                break;
+            }
+
+            ++i;
+        }
 
         return tagName;
     }
@@ -122,7 +162,7 @@ export { TagTools };
         let res = /<script(?:>|\s[\s\S]*?>)/.exec(content);
 
         if (res == null) {
-            // 沒找到 <script 開頭
+            // 沒找到 <script> 開頭
 
             rValue['hasChecked'] = content;
             return rValue;
@@ -130,7 +170,7 @@ export { TagTools };
 
         let hasChecked = RegExp.leftContext;
         let tagHead = RegExp.lastMatch;
-        let noCheck = RegExp.rightContext;
+        let remain = RegExp.rightContext;
         //-----------------------
         // 繼續追查是否是完整 <script> 標籤
 
@@ -139,7 +179,7 @@ export { TagTools };
             throw new Error(`script no support method`);
         }
 
-        let method = new methodClass(tagHead, noCheck);
+        let method = new methodClass(tagHead, remain);
         res = method.check();
 
         if (res['find']) {
@@ -175,34 +215,30 @@ export { TagTools };
             headTag = /(<%[-=]?)\s/;
 
         } else {
-            throw new TypeError(`error  tag(${tagName})`);
+            throw new TypeError(`error tagName(${tagName})`);
         }
         //-----------------------
         let scriptReg = /(<(script)(?:>|\s[\s\S]*?>))/;
 
         let mainReg = RegExp(`${scriptReg.source}|${headTag.source}`);
+        // /(<(script)(?:>|\s[\s\S]*?>))|(<%[-=]?)\s/
 
         debugger;
 
-        console.dir(mainReg);
+        // console.dir(mainReg);
 
         let res;
         let hasChecked;
-        let i = 0;
 
         while ((res = mainReg.exec(content)) != null) {
             debugger;
-
-            // console.log('(%s)%s', i++, RegExp.lastMatch);
-            // console.log(RegExp.lastMatch)
 
             hasChecked = (hasChecked || '');
             hasChecked += RegExp.leftContext;
 
             let tagHead = RegExp.lastMatch;
-
-            let _hasCheck = RegExp.lastMatch;
-            let noChecked = RegExp.rightContext;
+            let match = RegExp.lastMatch;
+            let remain = RegExp.rightContext;
 
             let tagName = res[2] || res[3] || null;
 
@@ -211,7 +247,7 @@ export { TagTools };
                 throw new Error(`(${tagName}) no support method`);
             }
 
-            let method = new methodClass(tagHead, noChecked);
+            let method = new methodClass(tagHead, remain);
             let _res = method.check();
 
             debugger;
@@ -223,20 +259,24 @@ export { TagTools };
                 return rValue;
             }
 
-            hasChecked += _hasCheck;
-            content = noChecked;
+            hasChecked += match;
+            content = remain;
 
         } // while end
         //-----------------------
         // 都沒找到
 
         rValue['hasChecked'] = content;
-
         return rValue;
     }
 })();
 
-
+////////////////////////////////////////////////////////////////////////////////
+//
+// 下面是是辨識 tag 的方法
+// 給予一段標頭,與之後的文字內容
+// 判別是否有目標,並提取
+//
 ////////////////////////////////////////////////////////////////////////////////
 
 class IsTag {
@@ -250,6 +290,10 @@ class IsTag {
     }
 
     check() {
+        throw new Error('need override');
+    }
+
+    _getNode() {
         throw new Error('need override');
     }
 }
@@ -272,8 +316,7 @@ class IsScript extends IsTag {
     }
     //--------------------------------------
     get reg() {
-        let reg = /(?:[`][\s\S]*?[^\\][`])|(?:['][\s\S]*?[^\\]['])|(?:["][\s\S]*?[^\\]["])|(?:\/\/[\s\S]*?\n)|(?:\/\*[\s\S]*?\*\/)|(<\/script>)/;
-        // capture_1: 目標
+
     }
     //------- -------------------------------
     _getCheckReg(endTag) {
@@ -340,7 +383,6 @@ class IsScript extends IsTag {
             rValue['remain'] = res['remain'];
             rValue['find'] = this._getNode();
         } else {
-
             rValue['hasChecked'] = this.source;
         }
 
@@ -360,11 +402,11 @@ class IsScript extends IsTag {
 
         let rgRes;
 
+        // 最重要是(this.checkReg)
         while ((rgRes = this.checkReg.exec(content)) != null) {
             // debugger;
 
             hasChecked = (hasChecked || '');
-            // hasChecked += content.substring(0, index);
             hasChecked += RegExp.leftContext;
 
             if (rgRes[1] != null) {
@@ -381,24 +423,14 @@ class IsScript extends IsTag {
             hasChecked += RegExp.lastMatch;
             content = RegExp.rightContext;
         }
-
+        //-----------------------
         rValue['hasChecked'] = copyContent;
 
         return rValue;
     }
     //--------------------------------------
-    _splitTag(content) {
-        let reg = /<\/script>/i;
-
-        reg.test(content);
-
-        this.textContent = RegExp.leftContext;
-    }
-    //--------------------------------------
     _getNode() {
-
         let node = new ScriptNode(this.head, this.textContent, this.foot);
-
         return node;
     }
 }
@@ -421,9 +453,7 @@ class IsCommand_1 extends IsTag {
     }
     //--------------------------------------
     get reg() {
-        // let reg = /(?:[`][\s\S]*?[^\\][`])|(?:['][\s\S]*?[^\\]['])|(?:["][\s\S]*?[^\\]["])|(?:\/\/[\s\S]*?\n)|(?:\/\*[\s\S]*?\*\/)|(<[\/]?(?:[a-z][^\s>\/]{0,})(?:>|\s[\s\S]*?>))|(\s%>)/i;
-        /* capture_2: 目標 */
-        /* capture_1: 有問題 */
+        return (/(?:[`][\s\S]*?[^\\][`])|(?:['][\s\S]*?[^\\]['])|(?:["][\s\S]*?[^\\]["])|(?:\/\/[\s\S]*?\n)|(?:\/\*[\s\S]*?\*\/)|(<[\/]?(?:[a-z][^\s>\/]{0,})(?:>|\s[\s\S]*?>))|(\s%>)/i);
     }
     //--------------------------------------
     _getCheckReg(endTag) {
@@ -467,17 +497,11 @@ class IsCommand_1 extends IsTag {
         });
 
         let str = list_1.join('|');
-        // str = `(${str})`;
-
-        // console.log(str);
 
         list = undefined;
         list_1 = undefined;
 
         reg = RegExp(str, 'i');
-
-        // console.log(reg.source);
-        // console.error('');
 
         return reg;
     }
@@ -531,7 +555,6 @@ class IsCommand_1 extends IsTag {
 
                 this.foot = rgRes[2];
                 this.textContent = hasChecked;
-                // this._splitTag(RegExp.leftContext);
 
                 return rValue;
             } else if (rgRes[1] != null) {
@@ -551,19 +574,8 @@ class IsCommand_1 extends IsTag {
         return rValue;
     }
     //--------------------------------------
-    _splitTag(content) {
-        debugger;
-        let reg = /([(<]%[-=]?)\s([\s\S]*)/;
-
-        let res = reg.exec(content);
-
-        this.head = res[1];
-        this.textContent = res[2];
-    }
-    //--------------------------------------
     _getNode() {
         let node = new CommandNode(this.head, this.textContent, this.foot);
-
         return node;
     }
 }
@@ -592,6 +604,10 @@ class IsCommand_2 extends IsCommand_1 {
     check() {
         return super.check();
     }
+    //--------------------------------------
+    _getNode() {
+        return super._getNode();
+    }
 
 }
 IsCommand_2.checkReg;
@@ -599,3 +615,4 @@ IsCommand_2.checkReg;
 TagTools.identifyTagMethod['(%'] = IsCommand_2;
 TagTools.identifyTagMethod['(%-'] = IsCommand_2;
 TagTools.identifyTagMethod['(%='] = IsCommand_2;
+//==============================================================================

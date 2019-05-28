@@ -7,13 +7,17 @@ import { TagTools } from './module/tools_1c1.js'
 
 const $template = (function () {
 
-    const $template = function (content, mode) {
+    const $template = function (content) {
         debugger;
 
-        let m = new GetRenderFn(content, mode);
+        let m = new GetRenderFn(content);
 
-        return m.fnCommand;
-        // return m.getFn();
+        let res = m.fnCommand;
+
+        // console.log(res);
+        console.log(JSON.stringify(m.SCRIPTS));
+
+        return res;
     };
     //--------------------------------------------------------------------------
     // $template 類別函式
@@ -64,6 +68,9 @@ const $template = (function () {
         // content: 要解析的 str
         // options: 解析的選項
         constructor(content) {
+
+            this.SCRIPTS = [];
+
             this.fnCommand = '';
 
             // 分析文本
@@ -71,7 +78,7 @@ const $template = (function () {
 
             this._getFnCommand();
 
-            console.log(this.fnCommand);
+            // console.log(this.fnCommand);
         }
         //------------------------------------------------
         _getFnCommand() {
@@ -81,9 +88,8 @@ const $template = (function () {
             }
 
             this.nodeList.forEach(function (node) {
-                this.fnCommand += node.printCommand();
+                this.fnCommand += node.printCommand(this.SCRIPTS);
             }, this);
-            // console.log(this.fnCommand);
         }
         //------------------------------------------------
         getFn() {
@@ -130,16 +136,14 @@ const $template = (function () {
                 let fnContent = `
                         'use strict'
 
-                        const data = {};
-                        Object.assign(data, _data);
-                        const $$$m = module;
+                        const D = {};
+                        Object.assign(D, data);
+                        data = undefined;
+                        module = undefined;
 
                         debugger;
                         //------------------
                         ${variables}
-
-                        _data = undefined;
-                        module = undefined;
                         //------------------
                         ${functionStr}
 
@@ -148,7 +152,7 @@ const $template = (function () {
                 let fun;
                 try {
                     debugger;
-                    fun = new Function('module', '_data', fnContent);
+                    fun = new Function('module', 'data', fnContent);
                 } catch (error) {
                     console.log(fnContent);
                     throw new Error(`build template error(${String(error)})`);
