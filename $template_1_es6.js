@@ -11,11 +11,13 @@ const $template = (function () {
         debugger;
 
         let m = new GetRenderFn(content);
+        let res;
 
-        let res = m.fnCommand;
-
+        // let res = m.fnCommand;
         // console.log(res);
-        console.log(JSON.stringify(m.SCRIPTS));
+        // console.log(JSON.stringify(m.SCRIPTS));
+
+        res = m.getFn();
 
         return res;
     };
@@ -68,7 +70,7 @@ const $template = (function () {
         // content: 要解析的 str
         // options: 解析的選項
         constructor(content) {
-
+            // 特殊作用
             this.SCRIPTS = [];
 
             this.fnCommand = '';
@@ -102,7 +104,7 @@ const $template = (function () {
                 'use strict';
 
                 // 取得功能模組
-                let module = $this._getModule();
+                const module = $this._getModule();
 
                 // 要被聲稱的變數
                 let variables = '';
@@ -114,53 +116,50 @@ const $template = (function () {
                 // 把 module 功能附加到 template 上
 
                 for (let k in module) {
-                    variables += `const ${k} = module["${k}"];\n`;
+                    variables += `const ${k} = M["${k}"];\n`;
                 }
                 //----------------------------
                 // 把 data 附加到 template 上
                 if (data == null) {
                     data = {};
                 }
-                /*
-                 for (let k in data) {
-                 if (data.hasOwnProperty(k)) {
-                 if (k in module) {
-                 throw new TypeError(`data[${k}] has exist`);
-                 }
-                 variables += `let ${k} = data["${k}"];\n`;
-                 }
-                 }
-                 */
                 //----------------------------
-
+                // 函式內容
                 let fnContent = `
                         'use strict'
+                        debugger;
 
                         const D = {};
                         Object.assign(D, data);
                         data = undefined;
+                        
+                        const M = module;
                         module = undefined;
 
-                        debugger;
+                        const SCRIPTS = scripts;
+                        scripts = undefined;
+
                         //------------------
                         ${variables}
+
                         //------------------
                         ${functionStr}
 
-                        return ($$$m.contentList.join(""));\n`;
+                        return (M.contentList.join(''));\n`;
                 //----------------------------
                 let fun;
                 try {
                     debugger;
-                    fun = new Function('module', 'data', fnContent);
+                    fun = new Function('module', 'scripts', 'data', fnContent);
                 } catch (error) {
                     console.log(fnContent);
                     throw new Error(`build template error(${String(error)})`);
                 }
                 //----------------------------
                 let htmlContent = '';
+
                 try {
-                    htmlContent = fun.call(context, module, data);
+                    htmlContent = fun.call(context, module, $this.SCRIPTS, data);
                 } catch (error) {
                     throw new Error(`run template error(${String(error)}) => (${fun.toString()})`);
                 }
@@ -168,8 +167,10 @@ const $template = (function () {
 
             }).bind({}, this.fnCommand);
 
+            //-----------------------
+
             fn.source = this.fnCommand;
-            // fn.nodeList = this.nodeList;
+            fn.nodeList = this.nodeList;
 
             return fn;
         }
@@ -180,38 +181,67 @@ const $template = (function () {
             const module = {};
 
 
-            module.setPrototypeOf(module, 'contentList', {
+
+            Object.defineProperty(module, 'contentList', {
                 enumerable: false,
                 writable: false,
                 configurable: false,
                 value: []
             });
 
+            // 對外公布添加文字的方法
+            const pushMethod = (function (text) {
+                this.contentList.push(text);
+            }).bind(module);
+
 
             // 重要對外函式
-            Object.setPrototypeOf(module, 'push', {
+            /*
+            Object.defineProperty(module, 'push', {
                 enumerable: false,
                 writable: false,
                 configurable: false,
-                value: function (text) {
-                    this.contentList.push(text);
-                }
+                value: pushMethod
             });
-
+            */
+            //-----------------------
             // 把預設的函式考上去
             for (let k in $templateInnerModule) {
                 let v = $templateInnerModule[k];
-                if (typeof (v) == 'function') {
-                    module[k] = v.bind(module);
+                if (typeof (v) != 'function') {
+                    continue;
                 }
+                module[k] = function () {
+                    'use strict';
+                    let args = Array.from(arguments);
+                    args.unshift(pushMethod);
+                    let res = v.apply(module, args);
+
+                    return res;
+                };
+                v.bind(module);
             }
+            //-----------------------
 
             // 把使用者加入的函式也考上去
             for (let k in $template.addOn) {
-                let v = $template.addOn[k];
-                if (typeof (v) == 'function') {
-                    module[k] = v.bind(module);
+
+                if (k in module) {
+                    throw new Error(`${k} has in module`);
                 }
+
+                let v = $template.addOn[k];
+                if (typeof (v) != 'function') {
+                    continue;
+                }
+                module[k] = function () {
+                    'use strict';
+                    let args = Array.from(arguments);
+                    args.unshift(pushMethod);
+                    let res = v.apply(module, args);
+
+                    return res;
+                };
             }
 
             return module;
@@ -223,31 +253,15 @@ const $template = (function () {
 
     (function ($self) {
 
-        function print(html) {
-            if (html == null) {
-                html = String(html);
-            } else if (typeof (html) == "object") {
-                html = JSON.stringify(html);
-            } else {
-                try {
-                    html += "";
-                } catch (error) {
-                    html = "";
-                }
-            }
-            return html;
-        }
         //------------------------------------------------
         // 最基本命令
-        $self.print = function (html) {
-            html = print(html);
+        $self.print = function (push, html) {
             // 一定要實作這
-            this.push(html);
+            push(html);
         };
         //------------------------------------------------
         // 最基本命令
-        $self.escape = function (html) {
-            html = print(html);
+        $self.escape = function (push, html) {
             if (_.escape != null) {
                 html = _.escape(html);
             } else {
@@ -261,9 +275,20 @@ const $template = (function () {
                 });
             }
             // 一定要實作這
-            this.push(html);
+            push(html);
         };
+        //------------------------------------------------
+        $self.stringify = function (push, obj) {
+            debugger;
+            let html;
+            try {
+                html = JSON.stringify(obj);
+            } catch (error) {
+                html = error + "";
+            }
 
+            return html;
+        };
 
     })($templateInnerModule);
 

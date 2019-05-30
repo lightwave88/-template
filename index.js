@@ -1,5 +1,5 @@
 
-import { $template } from './$template_1_es6.js';
+import { $template } from './$template_2_es6.js';
 
 export { $template };
 

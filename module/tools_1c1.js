@@ -4,7 +4,7 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { NodeClass } from './node_1a.js';
+import { NodeClass } from './node_1b.js';
 const NormalNode = NodeClass['NormalNode'];
 const ScriptNode = NodeClass['ScriptNode'];
 const CommandNode = NodeClass['CommandNode'];
@@ -26,14 +26,14 @@ export { TagTools };
 (function () {
 
     TagTools.findCommandTag = function (content) {
-        debugger;
+        // debugger;
 
         let nodeList = [];
 
         let tagName = _checkTagName(content);
 
         while (content) {
-            debugger;
+            // debugger;
 
             // 專門找 <script>
             // 正常程序是先找出 tagHead
@@ -48,7 +48,7 @@ export { TagTools };
                 res = _findScriptByAssignTag(content, tagName);
             }
             //-----------------------
-            debugger;
+            // debugger;
 
             let node;
 
@@ -114,7 +114,7 @@ export { TagTools };
         let judgeList = [];
 
         while (true) {
-            debugger;
+            // debugger;
 
             i = i % (methodList.length);
             let reg = methodList[i];
@@ -149,7 +149,7 @@ export { TagTools };
      }
      */
     function _findDefaultScript(content) {
-        debugger;
+        // debugger;
 
         const rValue = {
             hasChecked: undefined,
@@ -195,7 +195,7 @@ export { TagTools };
     //--------------------------------------------------------------------------
     // rValue: 回傳值
     function _findScriptByAssignTag(content, tagName) {
-        debugger;
+        // debugger;
 
         const rValue = {
             hasChecked: undefined,
@@ -223,7 +223,7 @@ export { TagTools };
         let mainReg = RegExp(`${scriptReg.source}|${headTag.source}`);
         // /(<(script)(?:>|\s[\s\S]*?>))|(<%[-=]?)\s/
 
-        debugger;
+        // debugger;
 
         // console.dir(mainReg);
 
@@ -231,7 +231,7 @@ export { TagTools };
         let hasChecked;
 
         while ((res = mainReg.exec(content)) != null) {
-            debugger;
+            // debugger;
 
             hasChecked = (hasChecked || '');
             hasChecked += RegExp.leftContext;
@@ -250,7 +250,7 @@ export { TagTools };
             let method = new methodClass(tagHead, remain);
             let _res = method.check();
 
-            debugger;
+            // debugger;
 
             if (_res['find']) {
                 rValue['find'] = _res['find'];
@@ -542,13 +542,13 @@ class IsCommand_1 extends IsTag {
         let rgRes;
 
         while ((rgRes = this.checkReg.exec(content)) != null) {
-            debugger;
+            // debugger;
 
             hasChecked = (hasChecked || '');
             hasChecked += RegExp.leftContext;
 
             if (rgRes[2] != null) {
-                debugger;
+                // debugger;
                 // 找到了結尾
                 rValue['remain'] = RegExp.rightContext;
                 rValue['find'] = true;

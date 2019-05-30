@@ -33,9 +33,9 @@ class NormalNode extends Node {
         this.html = content;
     }
     //----------------------------
-    printCommand(dataArray) {
+    printCommand() {
         this.html = this._checkHtml(this.html)
-        let content = 'print(`' + this.html + '`);\n';
+        let content = 'Out.print(`' + this.html + '`);\n';
         return content;
     }
     //----------------------------
@@ -66,19 +66,12 @@ class ScriptNode extends Node {
     }
     //----------------------------
 
-    printCommand(dataArray) {
+    printCommand() {
         let content;
+        // test
+        let html = JSON.stringify(this.html);
+        content = `Out.print(${html});\n`;
 
-        if (Array.isArray(dataArray)) {
-            // 正式用法
-            let index = dataArray.length;
-            dataArray.push(this.html);
-            content = `print(SCRIPTS[${index}]);\n`;
-        } else {
-            // test
-            let html = JSON.stringify(this.html);
-            content = `print(${html});\n`;
-        }
         return content;
     }
 }
@@ -104,61 +97,30 @@ class CommandNode extends Node {
         this.commandTag = tagName;
     }
     //----------------------------
-    printCommand(dataArray) {
+    printCommand() {
         let fnCommand = '';
 
-        if (Array.isArray(dataArray)) {
-            let index = dataArray.length;
+        let textContent;
 
-            let textContent;
-
-            switch (this.commandTag) {
-                case 'script':
-                case '<%':
-                case '(%':
-                    textContent = this.textContent;
-
-                    if (!/\n\s*$/.test()) {
-                        textContent += '\n';
-                    }
-
-                    fnCommand = textContent;
-                    dataArray.push(this.textContent);
-                    break;
-                case '<%=':
-                case '(%=':
-                    fnCommand = 'print(`' + this.textContent + '`);\n';
-                    break;
-                case '<%-':
-                case '(%-':
-                    fnCommand = 'escape(' + this.textContent + ');\n';
-                    break;
-                default:
-                    throw new Error('commandName Error(' + this.tagName + ')');
-                    break;
-            }
-        } else {
-            let textContent;
-
-            switch (this.commandTag) {
-                case 'script':
-                case '<%':
-                case '(%':
-                    fnCommand = this.textContent;
-                    break;
-                case '<%=':
-                case '(%=':
-                    fnCommand = 'print(`' + this.textContent + '`);\n';
-                    break;
-                case '<%-':
-                case '(%-':
-                    fnCommand = 'escape(' + this.textContent + ');\n';
-                    break;
-                default:
-                    throw new Error('commandName Error(' + this.tagName + ')');
-                    break;
-            }
+        switch (this.commandTag) {
+            case 'script':
+            case '<%':
+            case '(%':
+                fnCommand = this.textContent;
+                break;
+            case '<%=':
+            case '(%=':
+                fnCommand = 'Out.print(`' + this.textContent + '`);\n';
+                break;
+            case '<%-':
+            case '(%-':
+                fnCommand = 'Out.escape(' + this.textContent + ');\n';
+                break;
+            default:
+                throw new Error('commandName Error(' + this.tagName + ')');
+                break;
         }
+
 
         return fnCommand;
     }
