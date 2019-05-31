@@ -68,7 +68,8 @@ class ScriptNode extends Node {
 
     printCommand() {
         let content;
-        // test
+        // 這邊很重要
+        // 跟其他地方不同
         let html = JSON.stringify(this.html);
         content = `Out.print(${html});\n`;
 

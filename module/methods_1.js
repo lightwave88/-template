@@ -1,5 +1,15 @@
+////////////////////////////////////////////////////////////////////////////////
+//
+// 讓使用者可以擴增功能
+//
+//
+////////////////////////////////////////////////////////////////////////////////
+import { AnalyzeContent } from './analyzeContent_1.js';
 
+const add_methodModules = {};
 
+export { add_methodModules };
+//--------------------------------------
 
 function getMethodModule() {
 
@@ -14,11 +24,6 @@ function getMethodModule() {
         }
         return res;
     };
-    //---------------------------------
-    M.include = function (url) {
-
-    };
-
     return M;
 }
 

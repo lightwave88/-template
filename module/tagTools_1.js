@@ -69,36 +69,6 @@ export { TagTools };
 
         return nodeList;
     }
-    //--------------------------------------------------------------------------
-    function _$checkTagName(content) {
-        // debugger;
-
-        let tagName;
-
-        let methodList = [];
-        methodList.push(/(<%[-=]?)(\s+[\s\S]*?\s+|\s+)%>/g);
-        methodList.push(/(\(%[-=]?)(\s+[\s\S]*?\s+|\s+)%\)/g);
-        //-----------------------
-        methodList.some(function (reg) {
-            // debugger;
-
-            let res;
-            while ((res = reg.exec(content)) != null) {
-                let commandContent = res[2] || '';
-
-                if (/<[/]?(?:[a-z][^\s>/]{0,})(?:>|\s[\s\S]*?>)/.test(commandContent)) {
-                    continue;
-                }
-
-                tagName = res[1];
-                return true;
-            }
-        });
-        //-----------------------
-        methodList = undefined;
-
-        return tagName;
-    }
 
     //--------------------------------------------------------------------------
     function _checkCommandTagName(content) {
@@ -139,8 +109,9 @@ export { TagTools };
                     tagName = res[1];
                     break;
                 }
-                judgeList[i] = false;
+
             } else {
+                judgeList[i] = false;
             }
             //-----------------------
             ++i;
