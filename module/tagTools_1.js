@@ -71,6 +71,7 @@ export { TagTools };
     }
 
     //--------------------------------------------------------------------------
+    // test here
     function _checkCommandTagName(content) {
         // debugger;
 

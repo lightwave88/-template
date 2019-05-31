@@ -66,7 +66,7 @@ class OutputModuleClass {
     //---------------------------------
     // 轉換文本
     // 非同步
-    printTemplate = function (html, data) {
+    importTemplate = function (html, data) {
         data = data || {};
 
         let $this = this;
