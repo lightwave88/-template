@@ -1,0 +1,25 @@
+<div>
+    根模板
+    <div>
+        hi
+    </div>
+    <div>
+        子模板開始
+        <%
+            debugger;
+
+            if(D.root != null){
+                let content = await M.import(`${D.root}temp_1a.html`);
+                debugger;
+
+                // 把內文轉成模板文字
+                // 並存入
+                // 把 D 傳給子模板
+                
+                // 模板解析是非同步
+                await Out.importTemplate(content, D);
+            }
+        %>
+        子模板結束
+    </div>
+</div>

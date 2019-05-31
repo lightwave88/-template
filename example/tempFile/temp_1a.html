@@ -1,0 +1,22 @@
+<h1>
+    temp_1a.........
+</h1>
+<div>
+    子模板開始
+    <%
+        if(D.root != null){
+            // 用 ajax 取得內文
+            let content = await M.import(`${D.root}temp_1b.html`);
+            debugger;
+
+            // 把內文轉成模板文字
+            // 並存入
+            // 把 D 傳給子模板 
+            await Out.importTemplate(content, D);
+        }
+    %>
+    子模板結束
+</div>
+<p>
+    temp_1a.........
+</p>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="module">
+        // debugger;
+        import { $template } from './js_lib/$template/index.js';
+
+        window['$template'] = $template;
+    </script>
+    <script src="./js_lib/jquery-3.4.0.js"></script>
+    <script>
+
+        window.onload = function(){
+
+            // 為 template 加入一個功能 import
+            // 非同步根據 url 取得文本
+            window.$template.addMethods('import', function(url){
+                return new Promise((res, rej)=>{
+                    debugger;
+
+                    console.log(url);
+                    $.get(url).then((d)=>{
+                         debugger;
+                         res(d)
+                     },(err)=>{
+                         rej(err);
+                     });
+                });
+            });
+        }
+
+
+        function a(){
+            debugger;
+
+            const data = {};
+            
+            // 模板的位置
+            data['root'] = `${location.href}/../tempFile/`;
+
+            // 取得根模板
+            // 根模板內部會含有子模板
+            let p = Promise.resolve($.get('./tempFile/temp_1.html'));
+
+            p = p.then((d)=>{
+                debugger;
+
+                
+                // 根據文本行成模板函式
+                let fn = window.$template(d, {
+                    async: true
+                });
+
+                debugger;
+
+                console.log(fn.source);
+
+                return fn(data);
+            });
+
+            p = p.then((d)=>{
+
+                // 取得最後文本
+                console.log(d);
+            });
+
+        }
+
+
+
+    </script>
+</head>
+<body>
+    <div>
+        <button onclick="a()">a</button>
+    </div>
+</body>
+</html>
