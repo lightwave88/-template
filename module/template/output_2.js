@@ -18,15 +18,18 @@ const escapeMap = {
 
 const OutputModule = {};
 
+export { OutputModule };
+
 (function () {
 
     const $o = OutputModule;
 
-    $o.addModule = {
+    // 分組
+    $o.$addOnModules = {
         "*": {}
     };
     //-----------------------
-    $o.addFuntion = function (name, fun, moduleName) {
+    $o.addModule = function (name, fun, moduleName) {
         if (typeof name != 'string') {
             throw new TypeError("args[0] type must be string");
         }
@@ -36,77 +39,72 @@ const OutputModule = {};
 
         moduleName = (moduleName == null ? "*" : moduleName);
 
-        if (this.addModule[moduleName] == null) {
-            this.addModule[moduleName] = {};
+        if (this.$addOnModules[moduleName] == null) {
+            this.$addOnModules[moduleName] = {};
         }
 
-        this.addModule[moduleName][name] = fun;
+        this.$addOnModules[moduleName][name] = fun;
     };
-    //-----------------------
-    // options: 
+    //-----------------------------
+    
+    // engine: analyzeEngine(轉移資料用)
     // moduleName: 可以沒有
     $o.getModule = function (engine, moduleName) {
 
-        const out = new OutputCore(engine);
+        const obj = new OutputCore(engine);
 
         // inject
         // 不可以被覆蓋的 key
-        let KeyList = Object.keys(out);
+        let KeyList = Object.keys(obj);
 
 
-        for (let key in this.addModule["*"]) {
+        for (let key in this.$addOnModules["*"]) {
             if (KeyList.indexOf(key) >= 0) {
                 throw new Error(`cant override Out[${key}]`);
             }
-            let fn = this.addModule["*"][key];
+            let fn = this.$addOnModules["*"][key];
 
-            out[key] = fn.bind(out);
+            obj[key] = fn.bind(obj);
         }
 
-        if (moduleName != null && this.addModule[moduleName] != null) {
+        if (moduleName != null && this.$addOnModules[moduleName] != null) {
 
-            for (let key in this.addModule[moduleName]) {
+            for (let key in this.$addOnModules[moduleName]) {
                 if (KeyList.indexOf(key) >= 0) {
-                    throw new Error(`cant override Out[${key}]`);
+                    throw new Error(`cant override Output[${key}]`);
                 }
-                let fn = this.addModule[moduleName][key];
+                let fn = this.$addOnModules[moduleName][key];
 
-                out[key] = fn.bind(out);
+                obj[key] = fn.bind(obj);
             }
         }
 
-        return out;
+        return obj;
     };
 
 })();
 
-export { OutputModule };
-
-
+///////////////////////////////////////////////////////////////////////////////
 
 // output 功能的核心
 class OutputCore {
     constructor(analyzeEngine) {
-        sync = !!sync;
 
+        // 記錄 filepath 與檔案內容的配對
+        this.fileTextMap = {};
+
+        this.options = analyzeEngine.options;
+        
+        this.async = !!this.options.async;
+
+        // this['$$$contentList']
+        // 要輸出的文本內容
         Object.defineProperty(this, '$$$contentList', {
             enumerable: false,
             writable: false,
             configurable: false,
             value: []
         });
-
-
-        Object.defineProperty(this, '$$$parentInfo', {
-            enumerable: false,
-            writable: false,
-            configurable: false,
-            value: {
-                options: null,
-                path: null
-            }
-        });
-
     }
     //----------------------------
     push(html) {
@@ -143,8 +141,43 @@ class OutputCore {
     }
 
     //---------------------------------
+    // 動態 include
+    // 可以是 sync, async
+    include(filepath, data, path) {
+
+        let text = this.fileTextMap[filepath];
+
+        if (this.async) {
+            let p;
+
+            if (text == null) {
+                // 讀取檔案
+            } else {
+                p = Promise.resolve(text);
+            }
+
+            p = p.then(function (text) {
+                // 解析 file 內容
+                return this.includeTemplat(text, data, path);
+            });
+
+            return p;
+
+        } else {
+
+            if (text == null) {
+                // 讀取檔案
+            }
+
+            // 讀取 file 內容
+            this.includeTemplat(text, data, path);
+        }
+    }
+
+    //---------------------------------
+
     // 類似 php.include 功能
-    // 把 data, path 資訊往下傳     
+    // 把 data, path 資訊往下傳
     includeTemplat(html, data, path) {
 
         data = data || {};
@@ -153,6 +186,8 @@ class OutputCore {
 
         let al = new AnalyzeEngine(html, options);
 
+        // fix
+        // fix
         let fn = al.getFn();
 
         // 形成一個封閉環境
@@ -165,7 +200,7 @@ class OutputCore {
             });
         }
 
-        return res;
+        this.push(res);
     }
     //---------------------------------
     static print(html) {

@@ -5,96 +5,104 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 // 若出現雙向引用的解決方法
-const M = {};
+const InjectModules = {};
 
-class FunctionModules {
 
-    static addGlobalModules(name, fun) {
-        FunctionModules.moudules[name] = fun;
-    }
-    //-----------------------
+const FunctionModule = {};
 
-    static getInstance(name) {
-        let instance;
+export { FunctionModule };
 
-        name = (name == null ? "*" : name);
+(function () {
+    const $f = FunctionModule;
 
-        if (FunctionModules.instanceList[name] == null) {
-            FunctionModules.instanceList[name] = new TemplateFilter();
+    // 分組
+    $f.$addOnModuleGroups = {
+        "*": {}
+    };
+
+    //----------------------------
+    // 若出現雙向引用的解決方法
+    $f.injectModules = function (name, m) {
+        InjectModules[name] = m;
+    };
+    //----------------------------
+
+    $f.addModule = function (name, fun, moduleName) {
+        if (typeof name != 'string') {
+            throw new TypeError("args[0] type must be string");
         }
-        instance = FunctionModules.instanceList[name];
+        if (typeof fun != 'function') {
+            throw new TypeError("args[0] type must be function");
+        }
 
-        return instance;
-    }
-    //-----------------------
+        moduleName = (moduleName == null ? "*" : moduleName);
 
-    constructor() {
-        // 有時候需要獨立出 FunctionModules
-        this._modeules = {};
+        if (this.$addOnModuleGroups[moduleName] == null) {
+            this.$addOnModuleGroups[moduleName] = {};
+        }
+
+        this.$addOnModuleGroups[moduleName][name] = fun;
+    };
+    //----------------------------
+    // engine: 傳遞 options
+    $f.getModule = function (root, moduleName) {
+        debugger;
+
+        const obj = new FuntionCore(root);
+
+        // inject
+        // 不可以被覆蓋的 key
+        let KeyList = Object.keys(obj);
+
+        if (!(moduleName in this.$addOnModuleGroups)) {
+            throw new Error(`no this moduleGroup(${moduleName}) in FunctionModule`);
+        }
+
+        for (let key in this.$addOnModuleGroups[moduleName]) {
+            if (KeyList.indexOf(key) >= 0) {
+                throw new Error(`cant override Out[${key}]`);
+            }
+            let fn = this.$addOnModuleGroups[moduleName][key];
+
+            obj[key] = function(){
+                fn.apply(obj, arguments);
+            };
+        }
+
+
+        return obj;
+    };
+
+})();
+
+///////////////////////////////////////////////////////////////////////////////
+
+// 功能本體
+class FuntionCore {
+    constructor(root) {
+        debugger;
+
+        Object.defineProperty(this, '$$$root', {
+            value: root,
+            configurable: false,
+            writable: false,
+            enumerable: false,
+
+        });
+
+        this.async = root.options.async;
+
     }
-    //-----------------------
-    // Fun()
-    callModules(name) {
+    //----------------------------
+    stringify(obj) {
         let res;
-
-        if (name in this._modeules) {
-            res = this.modeules[name];
-        } else if (name in FunctionModules.modeules) {
-            res = FunctionModules.modeules[name];
+        try {
+            res = JSON.stringify(obj);
+        } catch (err) {
+            res = '' + err
         }
-
-        if (res == null) {
-            throw new Error(`Fun(${name}) no exists`);
-        }
-
         return res;
     }
-    //-----------------------
-    addModules(name, fun) {
-        if (typeof name != 'string') {
-            throw new TypeError('args[0] must be string');
-        }
-
-        if (typeof fun != 'function') {
-            throw new TypeError('args[0] must be function');
-        }
-        this.modeules[name] = fun;
-    }
-    //-----------------------
-    addGlobalModules(name, fun) {
-        if (typeof name != 'string') {
-            throw new TypeError('args[0] must be string');
-        }
-
-        if (typeof fun != 'function') {
-            throw new TypeError('args[0] must be function');
-        }
-        FunctionModules.moudules[name] = fun;
-    }
-};
-
-FunctionModules.instanceList = {
-    "*": null
-};
-
-// addon
-// global modules
-FunctionModules.moudules = {};
-
-// 若出現雙向引用的解決方法
-FunctionModules.injectModules = function (name, m) {
-    M[name] = m;
 }
 
-export { FunctionModules };
-//--------------------------------------
 
-FunctionModules.addGlobalModules('stringify', function (obj) {
-    let res;
-    try {
-        res = JSON.stringify(obj);
-    } catch (err) {
-        res = '' + err
-    }
-    return res;
-});

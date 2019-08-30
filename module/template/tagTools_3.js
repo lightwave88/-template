@@ -6,8 +6,9 @@
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-import { NodeClass } from './node_1c.js';
+import { NodeClass } from './node_1d.js';
 import { identifyTagMethod } from './isScript_1.js';
+//------------------------------------------------
 
 const $identifyTagMethod = identifyTagMethod;
 
@@ -43,12 +44,12 @@ NodeClass.injectModules(TagTools);
     // main
     // analyzeScript: 是否要分析 <script></script>
     // 預設是否
-    // return(nodeList, promise) 
-    $t.getCommandTag = function (content, async, analyzeScript) {
+    // return(nodeList, promise)
+    $t.getCommandTagSync = function (content, analyzeEngine) {
+        debugger;
 
         // 太麻煩，關閉
         analyzeScript = false;
-        async = !!async;
 
         // 第一次分離出節點
         let nodeList = $t.step_1(content, analyzeScript);
@@ -57,15 +58,35 @@ NodeClass.injectModules(TagTools);
         // loop，直到把所有的 include 都引入
         // async 返回 promise
         // sync 返回 nodeList
-        let res = $t.step_2(nodeList, async);
+        let list = $t.step_2_sync(nodeList, analyzeEngine);
 
-        // return res;
-
-        // test
-        return nodeList;
+        return list;
     };
-    //-----------------------
-    $t._getCommandTag = function (content) {
+    //----------------------------
+    $t.getCommandTag = async function (content, analyzeEngine) {
+        debugger;
+
+        // 太麻煩，關閉
+        analyzeScript = false;
+
+        // 第一次分離出節點
+        let nodeList = $t.step_1(content, analyzeScript);
+
+        // 從 command 分離出 include.node
+        // loop，直到把所有的 include 都引入
+        // async 返回 promise
+        // sync 返回 nodeList
+        let list = await $t.step_2(nodeList, analyzeEngine);
+
+        return list;
+    };
+    //----------------------------
+    // callBy includeNode
+    $t._getCommandTag = function (content, analyzeScript) {
+        debugger;
+
+        analyzeScript = false;
+
         // 第一次分離出節點
         let nodeList = $t.step_1(content, analyzeScript);
 
@@ -264,34 +285,56 @@ NodeClass.injectModules(TagTools);
 (function () {
     const $t = TagTools;
 
-    $t.step_2 = function (nodeList, async) {
+    $t.step_2 = async function () {
+        let list = await getResult(nodeList, analyzeEngine);
+        return list;
+    };
 
-        if (async) {
-            return getResult(nodeList);
-        } else {
-            return getResultSync(nodeList);
-        }
+    $t.step_2_sync = function (nodeList, analyzeEngine) {
+        let list = getResultSync(nodeList, analyzeEngine);
+        return list;
     };
     //---------------------------------
-    function getResultSync(nodeList) {
+    function getResultSync(nodeList, analyzeEngine) {
 
         while (true) {
+            debugger;
 
             let nodeList_1 = [];
 
             // 分離出 include
             nodeList.forEach(function (node) {
+                debugger;
+
                 if (!(node instanceof CommandNode)) {
+                    debugger;
+
+                    // 不是 CommandNode
+                    nodeList_1.push(node);
+                } else if (!node.hasInclude()) {
+                    debugger;
+
+                    // 是 CommandNode，但沒有 include 
                     nodeList_1.push(node);
                 } else {
-                    let nodeList_2 = node.separateNode();
-                    nodeList_1 = nodeList_1.concat(nodeList_2);
+                    debugger;
+
+                    // 是 CommandNode，有 include，將其分離出來
+                    let nodeList_2 = node.separateInclude();
+
+                    if (Array.isArray(nodeList_2)) {
+                        nodeList_2.forEach(function (n) {
+                            nodeList_1.push(n);
+                        });
+                    } else {
+                        nodeList_1.push(nodeList_2);
+                    }
                 }
             });
 
             nodeList = nodeList_1;
             //-----------------------
-            nodeList_1 = [];
+            nodeList_1.length = 0;
 
             // 記錄還有多少 include
             let k = 0;
@@ -302,7 +345,7 @@ NodeClass.injectModules(TagTools);
                 if (node instanceof IncludeNode) {
                     ++k;
 
-                    let list_1 = node.getNodeListSync();
+                    let list_1 = node.includeSync();
                     nodeList_1 = nodeList_1.concat(list_1);
                 } else {
                     nodeList_1.push(node);
@@ -320,7 +363,10 @@ NodeClass.injectModules(TagTools);
     }
     //---------------------------------
     async function getResult() {
+
+
         while (true) {
+            debugger;
 
             let nodeList_1 = [];
 
@@ -328,9 +374,24 @@ NodeClass.injectModules(TagTools);
             nodeList.forEach(function (node) {
                 if (!(node instanceof CommandNode)) {
                     nodeList_1.push(node);
-                } else {
-                    let nodeList_2 = node.separateNode();
-                    nodeList_1 = nodeList_1.concat(nodeList_2);
+                } else if(!node.hasInclude()){
+                    debugger;
+
+                    // 是 CommandNode，但沒有 include 
+                    nodeList_1.push(node);
+                }else{
+
+                    // 是 CommandNode，有 include，將其分離出來
+                    let nodeList_2 = node.separateInclude();
+
+                    if (Array.isArray(nodeList_2)) {
+                        nodeList_2.forEach(function (n) {
+                            nodeList_1.push(n);
+                        });
+
+                    } else {
+                        nodeList_1.push(nodeList_2);
+                    }
                 }
             });
 
@@ -343,17 +404,22 @@ NodeClass.injectModules(TagTools);
 
             // 確定是否有 include
             // 有就執行
-            nodeList.forEach(function (node) {
+
+            for (let i = 0, k = 0; i < nodeList.length; i++) {
+                let node = nodeList[i];
+
                 if (node instanceof IncludeNode) {
                     ++k;
 
                     // 可考慮用 Promise.all()
-                    let list_1 = await node.getNodeList();
+
+                    // include，並解成節點
+                    let list_1 = await node.include();
                     nodeList_1 = nodeList_1.concat(list_1);
                 } else {
                     nodeList_1.push(node);
                 }
-            });
+            }
 
             nodeList = nodeList_1;
 

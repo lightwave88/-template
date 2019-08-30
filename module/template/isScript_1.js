@@ -1,5 +1,11 @@
-// 要匯出的 funList
-const identifyTagMethod = {};
+import { NodeClass } from './node_1d.js';
+
+//------------------------------------------------
+
+const NormalNode = NodeClass['NormalNode'];
+const ScriptPartNode = NodeClass['ScriptPartNode'];
+const CommandNode = NodeClass['CommandNode'];
+const IncludeNode = NodeClass['IncludeNode'];
 
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -9,6 +15,10 @@ const identifyTagMethod = {};
 // 判別是否有目標,並提取
 //
 ////////////////////////////////////////////////////////////////////////////////
+// 要匯出的 funList
+const identifyTagMethod = {};
+export { identifyTagMethod };
+//------------------------------------------------
 
 class IsTag {
     constructor(head, body) {
@@ -158,7 +168,7 @@ const IsScript = (function () {
             let isCommand = reg.test(s_head);
 
             if (isCommand) {
-                node = new CommandNode('script', s_head, s_context);
+                node = new CommandNode('script', s_context, false);
                 nodeList.push(node);
 
                 return nodeList;
@@ -311,7 +321,7 @@ const IsCommand_1 = (function () {
             }
             this.checkReg_1 = CheckReg_1;
 
-            this.checkReg_2 = /\binclude\(['"][\s\S]*?\1\)[;\b]/;
+            // this.checkReg_2 = /\binclude\(['"][\s\S]*?\1\)[;\b]/;
         }
         //--------------------------------------
         get reg() {
@@ -340,7 +350,7 @@ const IsCommand_1 = (function () {
             list.push(/(?:\/\*[\s\S]*?\*\/)/);
 
             // 捕捉 include()
-            list.push(/(?:\binclude\([\s\S]*?\)[\b;])/);
+            list.push(/(?:\binclude\(([\s\S]*?)\)[\b;])/);
 
             list.push(endTag);
             //-----------------------
@@ -435,12 +445,12 @@ const IsCommand_1 = (function () {
                     // 找到 include() 命令
                     let s = hasChecked.length;
                     let e = s + match.length - 1;
-                    let url = this._getIncludeUrl(match);
+                    let path = rgRes[1];
 
                     includes.push({
                         s: s,
                         e: e,
-                        url: url
+                        path: path
                     });
                 }
 
@@ -458,17 +468,10 @@ const IsCommand_1 = (function () {
         }
         //--------------------------------------
         _getNode(includes) {
-            let node = new CommandNode(this.head, this.head, this.textContent, includes);
+            let node = new CommandNode(this.head, this.textContent, true, includes);
             return [node];
         }
         //--------------------------------------
-        _getIncludeUrl(text){
-            let res;
-
-            res = text.replace(/^[\s\S]*?['"]/, "");
-            res = res.replace(/['"][\s\S]*$/, "");
-            return res;
-        }
     }
 
     identifyTagMethod['<%'] = IsCommand_1;
@@ -519,4 +522,4 @@ const IsCommand_2 = (function () {
 })();
 
 //==============================================================================
-export { identifyTagMethod };
+

@@ -8,94 +8,89 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 // 若出現雙向引用的解決方法
-const M = {};
+const InjectModules = {};
 
-class TemplateFilter {
+const Filter = {};
 
-    static addGlobalFilters(name, fun) {
+export { Filter };
+
+
+(function () {
+    const $f = Filter;
+
+    // 分組
+    $f.$addOnModuleGroups = {
+        "*": {}
+    };
+
+    //----------------------------
+    // 若出現雙向引用的解決方法
+    $f.injectModules = function (name, m) {
+        InjectModules[name] = m;
+    };
+    //----------------------------
+
+    $f.addModule = function (name, fun, moduleName) {
         if (typeof name != 'string') {
-            throw new TypeError('args[0] must be string');
+            throw new TypeError("args[0] type must be string");
         }
-
         if (typeof fun != 'function') {
-            throw new TypeError('args[0] must be function');
+            throw new TypeError("args[0] type must be function");
         }
-        TemplateFilter.addonFilters[name] = fun;
-    }
-    //-----------------------
-    static getInstance(name) {
-        let instance;
 
-        name = (name == null ? "*" : name);
+        moduleName = (moduleName == null ? "*" : moduleName);
 
-        if (TemplateFilter.instanceList[name] == null) {
-            TemplateFilter.instanceList[name] = new TemplateFilter();
+        if (this.$addOnModuleGroups[moduleName] == null) {
+            this.$addOnModuleGroups[moduleName] = {};
         }
-        instance = TemplateFilter.instanceList[name];
 
-        return instance;
-    }
-    //--------------------------------------
-    constructor() {
-        this.addonFilters = {};
+        this.$addOnModuleGroups[moduleName][name] = fun;
+    };
+    //----------------------------
+    // engine: 傳遞 options
+    $f.getModule = function (root, moduleName) {
+        debugger;
 
-    }
-    //-----------------------
-    // Filter()
-    print() {
-        let args = Array.from(arguments);
-        let text = args.shift();
+        const obj = new FilterCore(root);
 
-        for (let i = 0; i < args.length; i++) {
-            let key = args[i];
+        // inject
+        // 不可以被覆蓋的 key
+        let KeyList = Object.keys(obj);
 
-            let filter;
 
-            if (name in this.addonFilters) {
-                filter = this.addonFilters[name];
-            } else if (name in TemplateFilter.addonFilters) {
-                filter = TemplateFilter.addonFilters[name];
+        moduleName = moduleName || "*";
+
+        if (!(moduleName in this.$addOnModuleGroups)) {
+            throw new Error(`no this moduleGroup(${moduleName}) in Fileter`);
+        }
+
+        for (let key in this.$addOnModuleGroups[moduleName]) {
+            if (KeyList.includes(key)) {
+                throw new Error(`cant override Out[${key}]`);
             }
+            let fn = this.$addOnModuleGroups[moduleName][key];
 
-            if (typeof filter != 'function') {
-                throw new Error(`Filter(${key}) no exists`);
-            }
-            text = filter(text);
+            obj[key] = function(text){
+                return fn.call(obj, text);
+            };
         }
+        return obj;
+    };
 
-        return text;
-    }
-    //-----------------------
-    addFilters(name, fun) {
-        if (typeof name != 'string') {
-            throw new TypeError('args[0] must be string');
-        }
+})();
 
-        if (typeof fun != 'function') {
-            throw new TypeError('args[0] must be function');
-        }
-        this.addonFilters[name] = fun;
-    }
-    //-----------------------
-    addGlobalFilters(name, fun) {
+///////////////////////////////////////////////////////////////////////////////
+class FilterCore {
+    constructor(root) {
+        debugger;
 
-        TemplateFilter.addonFilters[name] = fun;
+        Object.defineProperty(this, '$$$root',{
+            value: root,
+            configurable: false,
+            writable: false,
+            enumerable: false,
+
+        });
     }
 }
 
-TemplateFilter.instanceList = {
-    "*": null
-};
-
-// addon
-// global.filters
-TemplateFilter.addonFilters = {};
-
-// 若出現雙向引用的解決方法
-TemplateFilter.injectModules = function (name, m) {
-    M[name] = m;
-}
-
-
-
-export { TemplateFilter };

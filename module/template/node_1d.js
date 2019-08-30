@@ -3,19 +3,29 @@
 // 節點
 //
 ////////////////////////////////////////////////////////////////////////////////
-const M = {};
+const InjectModules = {};
 
 const NodeClass = {
-    injectModules: function(name, m){
-        M[name] = m;
+    injectModules: function (name, m) {
+        InjectModules[name] = m;
     }
 };
 
 export { NodeClass };
-
+//--------------------------------------
 
 // 除了 (command 標籤) (script 標籤)外都是
 class Node {
+
+    constructor() {
+        // 取得使用者設定
+        this.renderFactory;
+    }
+
+    setRenderFactory(obj) {
+        renderFactory = obj;
+    }
+
     printCommand() {
         throw new Error('need override printCommand');
     }
@@ -30,7 +40,7 @@ class Node {
         return content;
     }
     //----------------------------
-    toString(){
+    toString() {
         return String(this);
     }
 }
@@ -47,8 +57,8 @@ class NormalNode extends Node {
         return content;
     }
     //----------------------------
-    toString(){
-        return `(this.html)`;
+    toString() {
+        return `N(this.html)`;
     }
 }
 
@@ -84,8 +94,8 @@ class ScriptPartNode extends Node {
         return content;
     }
     //----------------------------
-    toString(){
-        return this.html;
+    toString() {
+        return `S(this.html)`;
     }
 }
 
@@ -95,28 +105,30 @@ NodeClass['ScriptPartNode'] = ScriptPartNode;
 class CommandNode extends Node {
 
     // include: {}: include() 的位置上
-    constructor(tagName, head, textContent, include) {
+    constructor(tagName, textContent, hasCheckInclude, include) {
         super();
 
-        this.head = head.trim();
+        // this.head = head.trim();
 
         this.textContent = textContent || '';
 
         this.tagName = tagName;
 
-        this.hasCheckInclude = false;
+        // 是否檢查過 include
+        this.hasCheckInclude = !!hasCheckInclude;
 
         // 文本 include 分離點
-        this.include = [];
+        // [{s:,e:,path:}]
+        this.include;
 
-        if(Array.isArray(include)){
-            this.hasCheckInclude = true;
+        if (Array.isArray(include)) {
             this.include = include;
         }
     }
     //----------------------------
     // 分離出 include.node
-    separateNode(){
+    separateInclude() {
+        debugger;
 
         switch (this.tagName) {
             case '<%=':
@@ -124,14 +136,13 @@ class CommandNode extends Node {
             case '<%-':
             case '(%-':
                 return this;
-            default:
-                break;
         }
-        const $nodeList = [];
 
-        if(!this.hasCheckInclude){
-
+        if(this.include == null || this.include.length < 1){
+            return this;
         }
+
+        let $nodeList = this._separateIncludeNode();
 
         return $nodeList;
     }
@@ -151,7 +162,7 @@ class CommandNode extends Node {
                 textContent = this.textContent.trim();
 
                 if (textContent) {
-                    fnCommand = `Out.print(${textContent});\n`;
+                    fnCommand = `Out.print(\`${textContent}\`);\n`;
                 }
 
                 break;
@@ -160,7 +171,7 @@ class CommandNode extends Node {
                 textContent = this.textContent.trim();
 
                 if (textContent) {
-                    fnCommand = `Out.escape(${this.textContent});\n`;
+                    fnCommand = `Out.escape(\`${this.textContent}\`);\n`;
                 }
 
                 break;
@@ -171,46 +182,108 @@ class CommandNode extends Node {
         return fnCommand;
     }
     //----------------------------
-    toString(){
-        return this.textContent;
+    toString() {
+        return `C(this.textContent)`;
     }
+    //----------------------------
 
+    _separateIncludeNode() {
+        const nodeList = [];
+
+        let start;
+
+        for (let i = 0; i < this.include.length; i++) {
+            const info = this.include[i];
+
+            let s = info.s;
+            let e = info.e;
+            let path = info.path;
+
+            if (start == null) {
+                start = 0;
+            }
+
+            let context_1 = this.textContent.slice(start, s);
+            let context_2 = this.textContent.slice(s, e + 1);
+
+            let node = new CommandNode(this.tagName, context_1, true);
+            nodeList.push(node);
+
+            node = new IncludeNode();
+            nodeList.push(node);
+
+            start = e + 1;
+        }
+    }
+    //----------------------------
+    _checkInclude() {
+
+    }
 }
 
 NodeClass['CommandNode'] = CommandNode;
 //==============================================================================
-class IncludeNode extends Node{
-    constructor(url){
-        this.url = url;
+class IncludeNode extends Node {
+    constructor(filePath, analyze) {
+        super();
+
+        this.filepPath = filePath;
+
+        // pathData
+        this.path = {};
+
+        // include 的 root
+        this.includePath;
+
+        this._init(analyze);
     }
 
+    _init() {
+        this.filepPath = this.filepPath.split(",");
+
+        this.filepPath = this.filepPath.map(function (path) {
+            return path.trim();
+        });
+
+        Object.assign(this.path, analyze.path);
+
+        this.includePath = analyze.includePath;
+    }
+    //----------------------------
     printCommand() {
-        let res = '';
-
-        // test
-        res = `require("${this.url}")`;
-        return res;
+        throw new Error("include no resolve");
     }
-
+    //----------------------------
     // 截取文件
     // 再轉成 nodeList
     // 非同步
-    getNodeList(){
-        const TagTools = M['TagTools'];
-
-        const $nodeList = [];
+    include() {
+        const TagTools = InjectModules['TagTools'];
 
         // 非同步取得 context
         let context;
 
+        const $nodeList = [];
+
+        let path;
+
+        if (this.filepPath.length > 1) {
+
+        } else {
+
+        }
+
+        // 讀取檔案
+
+
         let res = TagTools._getCommandTag(context);
     }
-
+    //----------------------------
     // 截取文件
     // 再轉成 nodeList
     // 同步
-    getNodeListSync(){
-        const TagTools = M['TagTools'];
+    includeSync() {
+        const TagTools = InjectModules['TagTools'];
         const $nodeList = [];
 
         // 同步取得 context
@@ -220,13 +293,13 @@ class IncludeNode extends Node{
 
         return res;
     }
-
-    printCommand(){
+    //----------------------------
+    printCommand() {
         throw new Error("IncludeNode cant be printCommand");
     }
-
-    toString(){
-        return `include(${this.url})`;
+    //----------------------------
+    toString() {
+        return `I(${this.url})`;
     }
 }
 

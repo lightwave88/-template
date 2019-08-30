@@ -3,13 +3,14 @@
 import { TagTools } from './tagTools_3.js';
 
 // output 模組
-import { OutputModuleClass } from './output_1.js';
+import { OutputModuleClass } from './output_2.js';
 
 // 應用函式模組
-import { FuntionModels } from './functions_1.js';
+import { FuntionModels } from './functions_2.js';
 
-import { TemplateFilter } from './filter_1.js';
+import { TemplateFilter } from './filter_2.js';
 
+const InjectModules = {};
 
 
 class AnalyzeEngine {
@@ -59,7 +60,11 @@ class AnalyzeEngine {
         this.includePath = path;
     }
     //------------------------------------------------
-    render(data, content, moduleName) {
+    setModule(){
+
+    }
+    //------------------------------------------------
+    render(data, options) {
         const fn = this.getRenderFunction(content, moduleName);
 
         return fn(data);
@@ -68,7 +73,7 @@ class AnalyzeEngine {
     //------------------------------------------------
     // content: 作用域的主人
     // moduleName: 要採用的模組分支
-    getRenderFunction(content, moduleName) {
+    getRenderFunction(options) {
         content = content || {};
 
         const core = new RenderFunctionCore(this, content, moduleName);
@@ -127,6 +132,8 @@ class RenderFunctionCore {
     //----------------------------
     main(data) {
         this.data = data;
+
+        this.getModules();
 
         if (this.async) {
             return this._main(data);
