@@ -1,0 +1,1 @@
+export { $template } from './main_3.js'; 

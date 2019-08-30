@@ -16,7 +16,7 @@ import { AnalyzeEngine } from './template/analyzeEngine_1.js';
 // import { TemplateFilter } from './template/filter_1.js';
 
 //=============================================================================
-/* 
+/*
 options: {
     async: false
 }
@@ -36,15 +36,23 @@ const $template = {
 
     // API
     //
-    // factory.setUrl()
+    // factory.setPath()
     // factory.render(data, path)
     // opions: {async: 採用非同步模式}
-    $template.getFactory = function (context, options) {
-        let factory = new AnalyzeEngine(context, options);
+    $template.getFactory = function (context) {
+        let factory = new AnalyzeEngine(context);
     };
 
     // 增加模板內的功能
     $template.addFunction = function (name, fun, moduleName) {
+
+    };
+
+    $template.addFilter = function (name, fun, moduleName) {
+
+    };
+
+    $template.addOutput = function(name, fun, moduleName){
 
     };
 
@@ -92,7 +100,7 @@ const $template = {
         let nodeList = TagTools.findCommandTag(content, options);
         return nodeList;
     };
-    
+
     // test
     // 取得內文解析後的模版函式內容
     $template.getFncontext = function (content, options) {
