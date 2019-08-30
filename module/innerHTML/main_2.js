@@ -10,7 +10,7 @@ const $checkRootDom = checkRootDom;
 function innerHTMLCommand(dom, includeRoot) {
 
     if (window == null || window.document == null) {
-        throw new Error('_.$temlate.innerHTML() cant run in this system');
+        throw new Error('_.$temlate.innerHTML() no support this system');
     }
 
     let innerHTML = new InnerHTML();

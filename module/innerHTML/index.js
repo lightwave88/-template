@@ -1,0 +1,1 @@
+export { innerHTML } from './main_2.js';
