@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script>
+        window.onhashchange = function () {
+            console.log('hashchange');
+        }
+
+        window.onpopstate = function () {
+            console.log('popstate');
+        }
+
+        function R() {
+            return (Math.floor(Math.random() * 1000));
+        }
+
+        function a() {
+            debugger;
+
+            let n = R();
+            let url = location.href;
+            url = url.replace(/[?].*$|#.*$/, "");
+            url += '#' + n;
+            history.pushState(null, null, url);
+        }
+
+        function b() {
+            let n = R();
+            location.hash = n;
+        }
+
+        function c() {
+            console.dir(location);
+        }
+
+        function d() {
+            let res = ajax({
+                data: {
+                    name: 'x',
+                    age: 15
+                },
+                type: 'get',
+                async: false,
+                url: './ajax_1.php'
+            });
+
+            debugger;
+
+            console.log(res);
+        }
+
+        function e() {
+            let p = ajax({
+                data: {
+                    name: 'x',
+                    age: 15
+                },
+                type: 'post',
+                url: './ajax_1.php'
+            });
+
+            p.then(function (data) {
+                debugger;
+                console.log(data);
+            })
+                .catch(function (err) {
+                    debugger;
+                    console.log(err);
+                });
+        }
+
+
+        function ajax(data) {
+            debugger;
+
+            let res;
+
+            //第一    
+            let ajax = null;
+            if (window.XMLHttpRequest) {
+                ajax = new XMLHttpRequest();
+            } else {
+                ajax = new ActiveXObject();
+            }
+            //-----------------------
+            //第二
+            let type = data.type == 'get' ? 'get' : 'post';
+            let async = data.async == false ? false : true;
+            data.data = Object.assign({}, data.data);
+
+            let url = data.url;
+            let currentTime = (new Date()).getTime();
+            let argList = [];
+
+            if (Object.keys(data.data).length > 0) {
+                for (let k in data.data) {
+                    argList.push(`${k}=${data.data[k]}`);
+                }
+            }
+            //-----------------------
+            //第三
+            if (type == 'get') {
+
+                argList.push(`_time=${currentTime}`);
+                let argText = argList.join("&");
+
+                url += "?" + argText;
+
+                ajax.open(data.type, url, async);
+                ajax.send(null);
+
+            } else {
+                let argText = null;
+
+                if (argList.length > 0) {
+                    argText = argList.join("&");
+                }
+
+                ajax.open(data.type, url, async);
+                ajax.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+                ajax.send(argText);
+            }
+            //-----------------------
+            //第四
+            if (async) {
+
+                return new Promise(function (resolve, reject) {
+
+                    ajax.onreadystatechange = function () {
+                        if (this.readyState == 4) {
+                            if (this.status == 200) {
+                                debugger;
+
+                                if (/^xml$/.test(data.dataType)) {
+                                    res = ajax.responseXML;
+                                } else {
+                                    res = ajax.responseText;
+                                }
+
+                                resolve(res);
+                            } else {
+                                reject();
+                            }
+                        }
+                    }
+                });
+            } else {
+                if (/^xml$/.test(data.dataType)) {
+                    res = ajax.responseXML;
+                } else {
+                    res = ajax.responseText;
+                }
+                return res;
+            }
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <button onclick="a()">a</button>
+        <button onclick="b()">b</button>
+        <button onclick="c()">c</button>
+        <button onclick="d()">d</button>
+        <button onclick="e()">e</button>
+    </div>
+</body>
+
+</html>

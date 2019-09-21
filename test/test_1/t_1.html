@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <script type="module">
+        //debugger;
+
+        import { $template } from '../../module/index.js';
+        window["$template"] = $template;
+    </script>
+    <script>
+
+
+        function a() {
+            let text = `
+        <script class="_">
+            for (let i = 0; i < 5; i++) {
+        <\/script>
+        <div>hi \${i}</div>
+        <script class="_">
+            }
+        <\/script>
+        `;
+            let res = $template(text);
+
+            console.dir(res);
+
+            let r = res();
+
+            console.dir(r);
+        }
+    </script>
+</head>
+
+<body>
+    <div>
+        <button onclick="a()">a</button>
+    </div>
+
+
+</body>
+
+</html>

@@ -3,7 +3,7 @@
 // 文字過濾器
 //
 // 使用方法
-// Filter(string, 過濾器名字, 過濾器名字...); 
+// Filter(string, 過濾器名字, 過濾器名字...);
 //
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -49,14 +49,9 @@ export { Filter };
     //----------------------------
     // engine: 傳遞 options
     $f.getModule = function (root, moduleName) {
-        debugger;
+        // debugger;
 
         const obj = new FilterCore(root);
-
-        // inject
-        // 不可以被覆蓋的 key
-        let KeyList = Object.keys(obj);
-
 
         moduleName = moduleName || "*";
 
@@ -64,11 +59,14 @@ export { Filter };
             throw new Error(`no this moduleGroup(${moduleName}) in Fileter`);
         }
 
-        for (let key in this.$addOnModuleGroups[moduleName]) {
-            if (KeyList.includes(key)) {
-                throw new Error(`cant override Out[${key}]`);
+        const addOn = this.$addOnModuleGroups[moduleName]
+
+        for (let key in addOn) {
+            if (key in obj) {
+                // 避免 override
+                throw new Error(`cant override Filter[${key}]`);
             }
-            let fn = this.$addOnModuleGroups[moduleName][key];
+            let fn = addOn[key];
 
             obj[key] = function(text){
                 return fn.call(obj, text);
@@ -82,7 +80,7 @@ export { Filter };
 ///////////////////////////////////////////////////////////////////////////////
 class FilterCore {
     constructor(root) {
-        debugger;
+        // debugger;
 
         Object.defineProperty(this, '$$$root',{
             value: root,
@@ -93,4 +91,3 @@ class FilterCore {
         });
     }
 }
-
