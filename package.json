@@ -1,0 +1,14 @@
+{
+  "name": "template",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --inspect-brk=9229 nodeJs_test/t_1/t_1.js"
+  },
+  "author": "",
+  "license": "ISC"
+}
